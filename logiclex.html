@@ -1,0 +1,827 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>LogicLex — Reliable clarity. Industrial scale.</title>
+  <meta name="description" content="Turn complex rules and constraints into decision-ready output." />
+  <meta name="theme-color" content="#ffffff" />
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --fg:#0b1220;
+      --muted:#52607a;
+      --line:rgba(15,23,42,.12);
+      --panel:rgba(15,23,42,.035);
+      --accent:#5b43ff;
+      --accent2:#00bcd4;
+      --max:1120px;
+      --r:18px;
+      --shadow: 0 18px 60px rgba(2,6,23,.10);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--fg);
+      background:
+        radial-gradient(900px 520px at 18% 8%, rgba(91,67,255,.10), transparent 55%),
+        radial-gradient(900px 520px at 82% 12%, rgba(0,188,212,.08), transparent 55%),
+        radial-gradient(900px 520px at 50% 92%, rgba(91,67,255,.06), transparent 55%),
+        var(--bg);
+      overflow-x:hidden;
+    }
+
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:var(--max); margin:0 auto; padding:0 20px}
+    .muted{color:var(--muted)}
+    .hairline{border-top:1px solid var(--line)}
+    .sr{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+
+    /* Header */
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(12px);
+      background: linear-gradient(to bottom, rgba(255,255,255,.80), rgba(255,255,255,.40));
+      border-bottom:1px solid var(--line);
+    }
+    .topbar{display:flex; align-items:center; justify-content:space-between; padding:14px 0; gap:14px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:750; letter-spacing:.2px}
+    .mark{
+      width:32px; height:32px; border-radius:12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow: 0 12px 26px rgba(91,67,255,.18);
+    }
+
+    nav{
+      display:flex; gap:14px; align-items:center;
+      color:rgba(11,18,32,.62);
+      font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    }
+    nav a{
+      padding:8px 10px; border-radius:999px; border:1px solid transparent;
+      transition: background .15s ease, border-color .15s ease, color .15s ease;
+      white-space:nowrap;
+    }
+    nav a:hover{background:rgba(15,23,42,.04); color:var(--fg)}
+    nav a.active{color:var(--fg); border-color:rgba(15,23,42,.12); background:rgba(15,23,42,.03)}
+
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 14px; border-radius:999px;
+      border:1px solid rgba(15,23,42,.14);
+      background: rgba(15,23,42,.03);
+      font-weight:650; font-size:13px;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+      cursor:pointer; user-select:none; white-space:nowrap; color:var(--fg);
+    }
+    .btn:hover{background:rgba(15,23,42,.05); border-color:rgba(15,23,42,.18)}
+    .btn:active{transform: translateY(1px)}
+    .btnPrimary{
+      border-color: rgba(91,67,255,.25);
+      background: linear-gradient(135deg, rgba(91,67,255,.95), rgba(0,188,212,.88));
+      color:#fff;
+    }
+    .btnGhost{background:transparent}
+
+    /* Mobile menu */
+    .menuBtn{
+      display:none; width:42px; height:42px; border-radius:999px;
+      border:1px solid rgba(15,23,42,.14); background: rgba(15,23,42,.03); cursor:pointer;
+    }
+    .menuBtn:hover{background:rgba(15,23,42,.05)}
+    .iconLines{width:18px; height:12px; margin:0 auto; display:flex; flex-direction:column; justify-content:space-between}
+    .iconLines span{height:2px; width:100%; background: rgba(11,18,32,.82); border-radius:2px}
+
+    .drawerBackdrop{position:fixed; inset:0; background: rgba(2,6,23,.40); display:none; z-index:80}
+    .drawer{
+      position:fixed; top:0; right:0; height:100%; width:min(360px, 92vw);
+      background: rgba(255,255,255,.96);
+      border-left:1px solid var(--line);
+      box-shadow: var(--shadow);
+      transform: translateX(105%);
+      transition: transform .20s ease;
+      z-index:90;
+      padding:16px;
+    }
+    .drawer.open{transform: translateX(0)}
+    .drawerBackdrop.open{display:block}
+    .drawerTop{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+    .drawerNav{display:flex; flex-direction:column; gap:10px; margin-top:8px}
+    .drawerNav a{
+      padding:12px 12px; border-radius:14px;
+      border:1px solid rgba(15,23,42,.12); background: rgba(15,23,42,.02);
+      text-transform:uppercase; letter-spacing:.12em; font-size:12px;
+    }
+    .drawerNav a:hover{background:rgba(15,23,42,.04)}
+    .drawerActions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+
+    /* Hero */
+    .hero{padding:64px 0 18px}
+    .kicker{
+      display:inline-flex; gap:10px; align-items:center;
+      font-size:12px; color:rgba(11,18,32,.68);
+      border:1px solid rgba(15,23,42,.12);
+      padding:8px 12px; border-radius:999px;
+      background: rgba(15,23,42,.02);
+      letter-spacing:.18em; text-transform:uppercase;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.1));
+      box-shadow: 0 0 0 4px rgba(91,67,255,.10), 0 0 18px rgba(91,67,255,.20);
+      border: 1px solid rgba(91,67,255,.22);
+    }
+    h1{margin:18px 0 12px; font-size: clamp(40px, 5.1vw, 74px); line-height:1.03; letter-spacing:-1px}
+    .sub{max-width:760px; font-size: clamp(16px, 2vw, 18px); line-height:1.55; color: rgba(11,18,32,.70); margin:0 0 22px}
+    .actions{display:flex; gap:12px; flex-wrap:wrap}
+    .fine{margin-top:14px; font-size:12px; color: rgba(11,18,32,.60); display:flex; flex-wrap:wrap; gap:16px}
+    .fine span{display:inline-flex; align-items:center; gap:8px}
+    .tick{
+      width:18px; height:18px; border-radius:8px;
+      border:1px solid rgba(15,23,42,.12);
+      display:grid; place-items:center;
+      background: rgba(15,23,42,.02);
+      color: rgba(0,188,212,.95);
+      font-weight:900; font-size:12px;
+    }
+
+    /* Tech UI animation (no video needed) */
+    .heroMedia{
+      margin-top:26px;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius: var(--r);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      position:relative;
+      min-height: 380px;
+      background: linear-gradient(180deg, #fbfcff, #f4f7ff);
+    }
+    .uiCanvas{
+      position:absolute; inset:0;
+      background:
+        radial-gradient(900px 520px at 20% 20%, rgba(91,67,255,.14), transparent 60%),
+        radial-gradient(900px 520px at 80% 35%, rgba(0,188,212,.10), transparent 60%);
+    }
+    .gridLines{
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(to right, rgba(15,23,42,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15,23,42,.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(closest-side, rgba(0,0,0,.9), rgba(0,0,0,.05));
+      opacity:.55;
+    }
+    .scan{
+      position:absolute; left:-20%; top:0; height:100%; width:40%;
+      background: linear-gradient(90deg, transparent, rgba(0,188,212,.12), transparent);
+      transform: skewX(-14deg);
+      animation: scan 3.6s ease-in-out infinite;
+      opacity:.9;
+    }
+    @keyframes scan{
+      0%{transform: translateX(-40%) skewX(-14deg)}
+      100%{transform: translateX(220%) skewX(-14deg)}
+    }
+    .uiCards{
+      position:absolute; inset:0;
+      padding:22px;
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:12px;
+      align-items:stretch;
+    }
+    .panel{
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.78);
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(2,6,23,.06);
+      overflow:hidden;
+      position:relative;
+    }
+    .panelHead{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:12px 12px 10px;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      color: rgba(11,18,32,.80);
+      font-size:12px;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .chip{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(15,23,42,.02);
+      color: rgba(11,18,32,.65);
+      font-size:11px;
+      letter-spacing:.08em;
+    }
+    .pulseDot{
+      width:7px; height:7px; border-radius:50%;
+      background: rgba(0,188,212,.95);
+      box-shadow: 0 0 0 0 rgba(0,188,212,.35);
+      animation: pulse 1.6s ease-out infinite;
+    }
+    @keyframes pulse{
+      0%{box-shadow:0 0 0 0 rgba(0,188,212,.35)}
+      100%{box-shadow:0 0 0 10px rgba(0,188,212,0)}
+    }
+
+    .lines{padding:12px}
+    .row{
+      height:10px; border-radius:999px;
+      background: linear-gradient(90deg, rgba(15,23,42,.14), rgba(15,23,42,.06));
+      margin:10px 0;
+      position:relative;
+      overflow:hidden;
+    }
+    .row::after{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, transparent, rgba(91,67,255,.22), transparent);
+      transform: translateX(-70%);
+      animation: shimmer 2.4s ease-in-out infinite;
+    }
+    .row:nth-child(2)::after{animation-delay:.2s}
+    .row:nth-child(3)::after{animation-delay:.4s}
+    .row:nth-child(4)::after{animation-delay:.6s}
+    @keyframes shimmer{
+      0%{transform: translateX(-70%)}
+      100%{transform: translateX(70%)}
+    }
+
+    .chart{padding:12px 12px 14px}
+    .bars{display:grid; gap:10px}
+    .bar{
+      height:12px; border-radius:999px;
+      background: rgba(15,23,42,.06);
+      border:1px solid rgba(15,23,42,.08);
+      overflow:hidden;
+      position:relative;
+    }
+    .fill{
+      height:100%;
+      width:35%;
+      background: linear-gradient(90deg, rgba(91,67,255,.85), rgba(0,188,212,.80));
+      border-radius:999px;
+      transform-origin:left center;
+      animation: grow 2.6s ease-in-out infinite alternate;
+    }
+    .bar:nth-child(2) .fill{width:58%; animation-delay:.2s}
+    .bar:nth-child(3) .fill{width:46%; animation-delay:.4s}
+    .bar:nth-child(4) .fill{width:70%; animation-delay:.6s}
+    @keyframes grow{
+      0%{transform: scaleX(.72); opacity:.85}
+      100%{transform: scaleX(1); opacity:1}
+    }
+
+    .heroOverlay{
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.82));
+      pointer-events:none;
+    }
+    .heroInner{
+      position:absolute; inset:auto 0 0 0;
+      padding:22px;
+      z-index:5;
+    }
+    .imgTitle{font-size:12px; color: rgba(11,18,32,.60); letter-spacing:.22em; text-transform:uppercase}
+    .imgHeadline{font-size: clamp(22px, 3vw, 34px); margin:10px 0 8px; letter-spacing:-.4px}
+    .imgText{color: rgba(11,18,32,.70); max-width: 820px; line-height:1.55; margin:0}
+
+    /* Sections */
+    section{padding:58px 0}
+    .sectionHead{display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap; margin-bottom:18px}
+    .sectionTitle{font-size:22px; margin:0; letter-spacing:-.3px}
+    .sectionSub{margin:0; max-width: 760px; color: rgba(11,18,32,.70); line-height:1.55}
+
+    .bullets{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:18px}
+    .bullet{
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(15,23,42,.02);
+      border-radius: var(--r);
+      padding:16px;
+    }
+    .bullet h3{margin:0 0 6px; font-size:13px; letter-spacing:.16em; text-transform:uppercase; color: rgba(11,18,32,.88)}
+    .bullet p{margin:0; color: rgba(11,18,32,.70); font-size:13px; line-height:1.55}
+
+    .table{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius: var(--r);
+      overflow:hidden;
+      background: rgba(15,23,42,.02);
+      margin-top:18px;
+    }
+    table{width:100%; border-collapse:collapse}
+    th,td{padding:14px; border-bottom:1px solid rgba(15,23,42,.08); text-align:left; font-size:13px}
+    th{color: rgba(11,18,32,.60); font-weight:650; letter-spacing:.12em; text-transform:uppercase; font-size:12px}
+    tr:last-child td{border-bottom:none}
+    .tag{
+      display:inline-flex; padding:6px 10px;
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:999px;
+      font-size:12px;
+      background: rgba(255,255,255,.60);
+      color: rgba(11,18,32,.70);
+    }
+    .good{color: rgba(0,140,160,.95)}
+    .meh{color: rgba(11,18,32,.62)}
+    .bad{color: rgba(200,60,60,.92)}
+
+    /* Scale (removed 10x claim) */
+    .scale{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-top:18px}
+    .scaleCard{
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(15,23,42,.02);
+      border-radius: var(--r);
+      padding:18px;
+      position:relative;
+      overflow:hidden;
+    }
+    .scaleCard::before{
+      content:"";
+      position:absolute; inset:-40px;
+      background: radial-gradient(420px 240px at 30% 30%, rgba(91,67,255,.10), transparent 60%);
+      transform: rotate(8deg);
+      pointer-events:none;
+    }
+    .scaleNum{position:relative; font-size: clamp(34px, 4.2vw, 58px); margin:0; letter-spacing:-1px}
+    .scaleLabel{position:relative; margin:8px 0 0; color: rgba(11,18,32,.70); line-height:1.55; font-size:13px}
+
+    .cta{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius: calc(var(--r) + 6px);
+      background:
+        radial-gradient(700px 360px at 20% 30%, rgba(91,67,255,.12), transparent 60%),
+        radial-gradient(700px 360px at 80% 30%, rgba(0,188,212,.10), transparent 60%),
+        rgba(15,23,42,.02);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+    .ctaTop{display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap}
+    .cta h2{margin:0; font-size:22px; letter-spacing:-.3px}
+    .cta p{margin:8px 0 0; color: rgba(11,18,32,.70); line-height:1.55; max-width: 820px}
+    .formRow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; align-items:center}
+    .input{
+      flex: 1 1 260px; min-width: 220px;
+      padding:12px 14px; border-radius:999px;
+      border:1px solid rgba(15,23,42,.14);
+      background: rgba(255,255,255,.85);
+      color: var(--fg);
+      outline:none;
+    }
+    .input:focus{border-color: rgba(0,188,212,.35); box-shadow: 0 0 0 4px rgba(0,188,212,.12)}
+    .note{margin-top:10px; font-size:12px; color: rgba(11,18,32,.62); display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
+    .toast{
+      position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(15,23,42,.12);
+      padding: 10px 12px;
+      border-radius: 999px;
+      color: var(--fg);
+      font-size: 12px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 999;
+    }
+    .toast.show{opacity:1; transform: translateX(-50%) translateY(-2px)}
+
+    footer{
+      padding:28px 0 42px;
+      color: rgba(11,18,32,.62);
+      font-size:12px;
+      border-top:1px solid var(--line);
+      margin-top: 54px;
+    }
+
+    @media (max-width: 980px){
+      nav{display:none}
+      .menuBtn{display:inline-grid; place-items:center}
+      .bullets{grid-template-columns: 1fr}
+      .scale{grid-template-columns: 1fr}
+      .uiCards{grid-template-columns: 1fr; align-content:start}
+      .heroMedia{min-height: 460px}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      html{scroll-behavior:auto}
+      .scan, .row::after, .fill, .pulseDot{animation:none}
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap topbar">
+      <a class="brand" href="#home" aria-label="Go to Home">
+        <span class="mark" aria-hidden="true"></span>
+        <span>LogicLex</span>
+      </a>
+
+      <nav id="desktopNav" aria-label="Primary navigation">
+        <a href="#home" data-section="home">Home</a>
+        <a href="#approach" data-section="approach">Approach</a>
+        <a href="#products" data-section="products">Products</a>
+        <a href="#markets" data-section="markets">Markets</a>
+        <a href="#press" data-section="press">Press</a>
+        <a href="#partner" data-section="partner">Partner</a>
+      </nav>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btnGhost" id="copyInfoBtn" type="button">Copy email</button>
+        <a class="btn btnPrimary" href="#partner">Partner</a>
+        <button class="menuBtn" id="menuBtn" type="button" aria-label="Open menu">
+          <span class="iconLines" aria-hidden="true"><span></span><span></span><span></span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="drawerBackdrop" id="drawerBackdrop" aria-hidden="true"></div>
+  <aside class="drawer" id="drawer" aria-label="Mobile menu">
+    <div class="drawerTop">
+      <div class="brand"><span class="mark" aria-hidden="true"></span><span>LogicLex</span></div>
+      <button class="btn" id="closeDrawerBtn" type="button">Close</button>
+    </div>
+    <div class="drawerNav">
+      <a href="#home" data-close>Home</a>
+      <a href="#approach" data-close>Approach</a>
+      <a href="#products" data-close>Products</a>
+      <a href="#markets" data-close>Markets</a>
+      <a href="#press" data-close>Press</a>
+      <a href="#partner" data-close>Partner</a>
+    </div>
+    <div class="drawerActions">
+      <button class="btn btnGhost" id="copyInfoBtn2" type="button">Copy email</button>
+      <a class="btn btnPrimary" href="#partner" data-close>Partner</a>
+    </div>
+    <p class="muted" style="margin:14px 0 0; font-size:12px;">Richmond, Virginia.</p>
+  </aside>
+
+  <main id="home">
+    <!-- HERO -->
+    <div class="wrap hero">
+      <div class="kicker"><span class="dot" aria-hidden="true"></span> RELIABLE CLARITY, INDUSTRIAL SCALE</div>
+
+      <h1>Reliable guidance.<br/>High-volume decisions.</h1>
+
+      <p class="sub">
+        LogicLex turns complex rules and constraints into decision-ready output—clear summaries, tradeoffs, and the next step.
+      </p>
+
+      <div class="actions">
+        <a class="btn btnPrimary" href="#products">Explore products</a>
+        <a class="btn" href="#approach">See the approach</a>
+      </div>
+
+      <div class="fine">
+        <span><span class="tick">✓</span> Plain English</span>
+        <span><span class="tick">✓</span> One-page briefs</span>
+        <span><span class="tick">✓</span> Consistent format</span>
+      </div>
+
+      <!-- Tech UI animation block -->
+      <div class="heroMedia" aria-label="Tech UI animation">
+        <div class="uiCanvas" aria-hidden="true"></div>
+        <div class="gridLines" aria-hidden="true"></div>
+        <div class="scan" aria-hidden="true"></div>
+
+        <div class="uiCards" aria-hidden="true">
+          <div class="panel">
+            <div class="panelHead">
+              <span>Decision brief</span>
+              <span class="chip"><span class="pulseDot"></span> Live</span>
+            </div>
+            <div class="lines">
+              <div class="row" style="width:92%"></div>
+              <div class="row" style="width:84%"></div>
+              <div class="row" style="width:78%"></div>
+              <div class="row" style="width:66%"></div>
+              <div class="row" style="width:88%"></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHead">
+              <span>Tradeoffs</span>
+              <span class="chip">Overview</span>
+            </div>
+            <div class="chart">
+              <div class="bars">
+                <div class="bar"><div class="fill"></div></div>
+                <div class="bar"><div class="fill"></div></div>
+                <div class="bar"><div class="fill"></div></div>
+                <div class="bar"><div class="fill"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="heroOverlay" aria-hidden="true"></div>
+
+        <div class="heroInner">
+          <div class="imgTitle">DECISION OUTPUT, NOT DOCUMENTS</div>
+          <div class="imgHeadline">From “what does this mean?” to “here’s what we’re doing.”</div>
+          <p class="imgText">
+            Capture a change, policy, or constraint. Generate a brief leadership can read in one pass.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="hairline"></div>
+
+    <!-- APPROACH -->
+    <section id="approach">
+      <div class="wrap">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">Approach</h2>
+          <p class="sectionSub">Most teams collect information. LogicLex produces a defensible decision.</p>
+        </div>
+
+        <div class="bullets">
+          <div class="bullet">
+            <h3>Translate</h3>
+            <p>Convert complex language into plain, actionable guidance.</p>
+          </div>
+          <div class="bullet">
+            <h3>Compare</h3>
+            <p>Lay out options and tradeoffs in a single view.</p>
+          </div>
+          <div class="bullet">
+            <h3>Recommend</h3>
+            <p>Provide a clear next step with rationale and risks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products">
+      <div class="wrap">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">Products</h2>
+          <p class="sectionSub">Start simple. One workflow. One output.</p>
+        </div>
+
+        <div class="bullets">
+          <div class="bullet">
+            <h3>Decision brief</h3>
+            <p>Context → options → tradeoffs → risks → recommendation.</p>
+          </div>
+          <div class="bullet">
+            <h3>Change summary</h3>
+            <p>What changed, who is impacted, and urgency.</p>
+          </div>
+          <div class="bullet">
+            <h3>Risk notes</h3>
+            <p>Key risks and mitigations in a consistent format.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARKETS -->
+    <section id="markets">
+      <div class="wrap">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">Markets</h2>
+          <p class="sectionSub">Anywhere rules meet deadlines: regulated tech, finance, security programs, procurement.</p>
+        </div>
+
+        <div class="table" aria-label="Comparison table">
+          <table>
+            <thead>
+              <tr>
+                <th>Comparison</th>
+                <th>Docs / wikis</th>
+                <th>Generic chat</th>
+                <th><span class="tag">LogicLex</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Clarity</td>
+                <td class="meh">Mixed</td>
+                <td class="meh">Varies</td>
+                <td class="good">Clear</td>
+              </tr>
+              <tr>
+                <td>Decision-ready output</td>
+                <td class="bad">No</td>
+                <td class="meh">Sometimes</td>
+                <td class="good">Yes</td>
+              </tr>
+              <tr>
+                <td>Tradeoffs</td>
+                <td class="bad">No</td>
+                <td class="meh">Manual</td>
+                <td class="good">Built-in</td>
+              </tr>
+              <tr>
+                <td>Executive format</td>
+                <td class="meh">Manual</td>
+                <td class="meh">Manual</td>
+                <td class="good">One page</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="scale">
+          <div class="scaleCard">
+            <p class="scaleNum">1</p>
+            <p class="scaleLabel"><strong>One brief</strong> replaces long threads and rewrites.</p>
+          </div>
+          <div class="scaleCard">
+            <p class="scaleNum">0</p>
+            <p class="scaleLabel"><strong>Personal data required</strong> to pilot the workflow.</p>
+          </div>
+          <div class="scaleCard">
+            <p class="scaleNum">✓</p>
+            <p class="scaleLabel"><strong>Consistent format</strong> across teams and decisions.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRESS -->
+    <section id="press">
+      <div class="wrap">
+        <div class="sectionHead">
+          <h2 class="sectionTitle">Press</h2>
+          <p class="sectionSub">Add logos or quotes when you have them. Keep it sparse.</p>
+        </div>
+
+        <div class="bullets">
+          <div class="bullet">
+            <h3>Early partners</h3>
+            <p>Launching with a small cohort of design partners.</p>
+          </div>
+          <div class="bullet">
+            <h3>Built for clarity</h3>
+            <p>Short, consistent outputs leadership can trust.</p>
+          </div>
+          <div class="bullet">
+            <h3>Operational pace</h3>
+            <p>Designed for teams making decisions every day.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PARTNER -->
+    <section id="partner">
+      <div class="wrap">
+        <div class="cta">
+          <div class="ctaTop">
+            <div>
+              <h2>Partner with LogicLex</h2>
+              <p>Pilot a decision-brief workflow with your team. Tell us what you’d capture and what output you need.</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <a class="btn" href="mailto:info@logiclex.com?subject=LogicLex%20Partner%20Inquiry">Email</a>
+              <button class="btn btnPrimary" id="rsvpScrollBtn" type="button">RSVP</button>
+            </div>
+          </div>
+
+          <form id="rsvpForm" novalidate>
+            <div class="formRow">
+              <label class="sr" for="email">Email</label>
+              <input class="input" id="email" name="email" type="email" placeholder="Work email" autocomplete="email" required />
+              <label class="sr" for="usecase">Use case</label>
+              <input class="input" id="usecase" name="usecase" type="text" placeholder="What would you capture? (optional)" autocomplete="off" />
+              <button class="btn btnPrimary" type="submit">Submit</button>
+            </div>
+            <div class="note">
+              <span id="formStatus">No spam. Stored locally in your browser for this demo.</span>
+              <button class="btn btnGhost" id="clearSavedBtn" type="button">Clear saved</button>
+            </div>
+          </form>
+        </div>
+
+        <footer>
+          <div class="wrap" style="padding:0; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div>© <span id="year"></span> LogicLex</div>
+            <div class="muted">Richmond, Virginia.</div>
+          </div>
+        </footer>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // Small, tight JS: drawer, active nav, copy email, RSVP local save
+    const $ = (s, r=document) => r.querySelector(s);
+    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+    const toastEl = $("#toast");
+    let t;
+    const toast = (msg) => {
+      clearTimeout(t);
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      t = setTimeout(() => toastEl.classList.remove("show"), 1400);
+    };
+
+    $("#year").textContent = new Date().getFullYear();
+
+    // Copy email
+    const INFO_EMAIL = "info@logiclex.com";
+    async function copyEmail(){
+      try{ await navigator.clipboard.writeText(INFO_EMAIL); toast("Copied: " + INFO_EMAIL); }
+      catch{
+        const ta = document.createElement("textarea");
+        ta.value = INFO_EMAIL;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        toast("Copied: " + INFO_EMAIL);
+      }
+    }
+    $("#copyInfoBtn").addEventListener("click", copyEmail);
+    $("#copyInfoBtn2").addEventListener("click", copyEmail);
+
+    // Drawer
+    const drawer = $("#drawer");
+    const back = $("#drawerBackdrop");
+    const openDrawer = () => { drawer.classList.add("open"); back.classList.add("open"); back.setAttribute("aria-hidden","false"); };
+    const closeDrawer = () => { drawer.classList.remove("open"); back.classList.remove("open"); back.setAttribute("aria-hidden","true"); };
+
+    $("#menuBtn").addEventListener("click", openDrawer);
+    $("#closeDrawerBtn").addEventListener("click", closeDrawer);
+    back.addEventListener("click", closeDrawer);
+    $$("[data-close]", drawer).forEach(a => a.addEventListener("click", closeDrawer));
+    window.addEventListener("keydown", (e) => { if(e.key === "Escape") closeDrawer(); });
+
+    // Active nav highlight
+    const navLinks = $$("#desktopNav a");
+    const ids = ["home","approach","products","markets","press","partner"];
+    const sections = ids.map(id => document.getElementById(id));
+
+    const io = new IntersectionObserver((entries) => {
+      const v = entries.filter(e => e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
+      if(!v) return;
+      const id = v.target.id;
+      navLinks.forEach(a => a.classList.toggle("active", a.dataset.section === id));
+    }, { threshold:[0.25,0.35,0.5,0.65] });
+
+    sections.forEach(s => s && io.observe(s));
+
+    // RSVP (local demo)
+    const form = $("#rsvpForm");
+    const email = $("#email");
+    const usecase = $("#usecase");
+    const status = $("#formStatus");
+    const key = "logiclex_rsvp";
+
+    const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||"").trim());
+
+    try{
+      const saved = JSON.parse(localStorage.getItem(key) || "null");
+      if(saved?.email){
+        email.value = saved.email;
+        if(saved.usecase) usecase.value = saved.usecase;
+        status.textContent = "Loaded saved RSVP (local).";
+      }
+    }catch{}
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const eaddr = email.value.trim();
+      if(!isValidEmail(eaddr)){
+        status.textContent = "Enter a valid email.";
+        toast("Invalid email");
+        email.focus();
+        return;
+      }
+      localStorage.setItem(key, JSON.stringify({ email: eaddr, usecase: usecase.value.trim(), ts: new Date().toISOString() }));
+      status.textContent = "Saved. We'll reach out soon.";
+      toast("Submitted ✅");
+    });
+
+    $("#clearSavedBtn").addEventListener("click", () => {
+      localStorage.removeItem(key);
+      status.textContent = "Cleared.";
+      toast("Cleared saved RSVP");
+    });
+
+    $("#rsvpScrollBtn").addEventListener("click", () => {
+      email.focus({preventScroll:true});
+      email.scrollIntoView({behavior:"smooth", block:"center"});
+    });
+  </script>
+</body>
+</html>
