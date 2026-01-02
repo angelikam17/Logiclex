@@ -3,13 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="LogicLex turns complex policies and constraints into clear summaries, tradeoffs, and next steps." />
+  <meta name="description" content="LogicLex turns complex policies and constraints into clear summaries and next steps." />
   <title>LogicLex — Reliable clarity. Industrial scale.</title>
+
+  <!-- Canonical + theming -->
+  <link rel="canonical" href="https://logiclex.com/" />
+  <meta name="theme-color" content="#0b0d10" />
+  <!-- Optional: add real icons later -->
+  <link rel="icon" href="/favicon.ico" />
 
   <!-- Open Graph -->
   <meta property="og:title" content="LogicLex — Reliable clarity. Industrial scale." />
   <meta property="og:description" content="Decision output, not documents. One-page briefs leadership can trust." />
   <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://logiclex.com/" />
+  <!-- Optional: add real image later -->
+  <meta property="og:image" content="https://logiclex.com/og.png" />
+
+  <!-- Optional: Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
 
   <style>
     :root{
@@ -150,9 +162,7 @@
       font-weight: 650;
     }
     .btn.primary:hover{ background: rgba(233,238,246,.84); }
-    .btn.ghost{
-      background: transparent;
-    }
+    .btn.ghost{ background: transparent; }
 
     .hamburger{ display:none; }
 
@@ -173,6 +183,7 @@
       background: rgba(233,238,246,.06);
       text-decoration: none;
     }
+    .drawer.open{ display:block; }
 
     /* Hero */
     .hero{
@@ -392,6 +403,12 @@
       margin-top: 12px;
       flex-wrap: wrap;
     }
+    .privacy{
+      margin-top: 10px;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1.4;
+    }
 
     footer{
       border-top: 1px solid var(--line);
@@ -436,9 +453,26 @@
       .partner{ grid-template-columns: 1fr; }
       nav{ display:none; }
       .hamburger{ display:inline-flex; }
-      .drawer.open{ display:block; }
     }
   </style>
+
+  <!-- Structured data (SEO) -->
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Organization",
+    "name":"LogicLex",
+    "url":"https://logiclex.com/",
+    "description":"LogicLex turns complex policies and constraints into clear summaries and next steps.",
+    "email":"info@logiclex.com",
+    "address":{
+      "@type":"PostalAddress",
+      "addressLocality":"Richmond",
+      "addressRegion":"VA",
+      "addressCountry":"US"
+    }
+  }
+  </script>
 </head>
 
 <body>
@@ -487,7 +521,7 @@
         <h1>Reliable guidance.<br/>High-volume decisions.</h1>
 
         <p class="subhead">
-          LogicLex turns complex policies and constraints into clear summaries, tradeoffs, and next steps.
+          LogicLex converts policies, constraints, and requirements into one-page decision briefs leaders can act on.
         </p>
 
         <div class="cta">
@@ -506,7 +540,7 @@
             <div class="inner">
               <h3>Decision output, not documents</h3>
               <p class="lede" style="margin:0;">
-                From “what does this mean?” to “here’s what we’re doing.” Capture a change, policy, or constraint—and get a decision format you can defend.
+                From “what does this mean?” to “here’s what we’re doing.” Decisions you can defend.
               </p>
             </div>
             <div class="mock" aria-label="Decision brief preview">
@@ -672,7 +706,7 @@
       <div class="wrap">
         <h2>Partner with LogicLex</h2>
         <p class="lede">
-          Share a use case and the output you need. We will follow up to discuss fit and next steps.
+          We will follow up to discuss fit and next steps.
         </p>
 
         <div class="partner">
@@ -698,6 +732,10 @@
               <button class="btn" type="button" id="clearSavedBtn">Clear</button>
               <span class="mono" id="saveState" aria-live="polite"></span>
             </div>
+
+            <p class="privacy">
+              Drafts are saved locally in your browser (not sent anywhere) until you submit.
+            </p>
           </form>
 
           <div class="panel">
@@ -735,7 +773,6 @@
 
   <script>
     (function(){
-      // Replace with your real inbox.
       const EMAIL = "info@logiclex.com";
 
       const $ = (id) => document.getElementById(id);
@@ -758,10 +795,12 @@
         }catch(e){
           const tmp = document.createElement("textarea");
           tmp.value = EMAIL;
+          tmp.setAttribute("readonly", "");
           tmp.style.position = "fixed";
           tmp.style.left = "-9999px";
           document.body.appendChild(tmp);
           tmp.select();
+          tmp.setSelectionRange(0, tmp.value.length);
           document.execCommand("copy");
           document.body.removeChild(tmp);
           showToast("Email copied");
@@ -770,18 +809,41 @@
       $("copyEmailBtn").addEventListener("click", copyEmail);
       $("copyEmailBtn2").addEventListener("click", copyEmail);
 
-      // Mobile menu
+      // Mobile menu: close on outside click + Escape + focus management
       const menuBtn = $("menuBtn");
       const drawer = $("mobileMenu");
+      let lastFocus = null;
+
+      function closeMenu(){
+        drawer.classList.remove("open");
+        menuBtn.setAttribute("aria-expanded", "false");
+        if(lastFocus) lastFocus.focus();
+      }
+
       menuBtn.addEventListener("click", () => {
-        const open = drawer.classList.toggle("open");
-        menuBtn.setAttribute("aria-expanded", String(open));
+        const isOpen = drawer.classList.toggle("open");
+        menuBtn.setAttribute("aria-expanded", String(isOpen));
+        if(isOpen){
+          lastFocus = document.activeElement;
+          const firstLink = drawer.querySelector("a");
+          if(firstLink) firstLink.focus();
+        }
       });
+
+      document.addEventListener("keydown", (e) => {
+        if(e.key === "Escape" && drawer.classList.contains("open")){
+          closeMenu();
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if(!drawer.classList.contains("open")) return;
+        const clickedInside = drawer.contains(e.target) || menuBtn.contains(e.target);
+        if(!clickedInside) closeMenu();
+      });
+
       drawer.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => {
-          drawer.classList.remove("open");
-          menuBtn.setAttribute("aria-expanded", "false");
-        });
+        a.addEventListener("click", () => closeMenu());
       });
 
       // Partner form (local draft save)
@@ -834,10 +896,22 @@
         showToast("Cleared");
       });
 
+      // Submit: sends an email draft (no backend) + keeps local save
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         saveDraft();
-        showToast("Submitted");
+
+        const email = $("email").value.trim();
+        const usecase = $("usecase").value.trim();
+        const details = $("details").value.trim();
+
+        const subject = encodeURIComponent(`LogicLex partner inquiry — ${usecase}`);
+        const body = encodeURIComponent(
+          `Email: ${email}\nUse case: ${usecase}\n\nDetails:\n${details}\n`
+        );
+
+        window.location.href = `mailto:${EMAIL}?subject=${subject}&body=${body}`;
+        showToast("Opening email draft…");
       });
 
       loadSaved();
@@ -845,5 +919,6 @@
   </script>
 </body>
 </html>
+
 
        
